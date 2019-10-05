@@ -22,17 +22,20 @@ import java.lang.Math;
 public class InversedTermFrequency extends Configured implements Tool {
 
     private final static String FILE_COUNT = "CountOfFiles";
+    public static double fileCount = 0.0;
 
     public static class TokenizerMapper
             extends Mapper<Object, Text, Text, DoubleWritable> {
 
         private final DoubleWritable one = new DoubleWritable(1.0);
 
+
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             JSONObject json = new JSONObject(document.toString());
             Text content = new Text(json.get("text").toString());
             StringTokenizer words = new StringTokenizer(content.toString(), " \'\n.,!?:()[]{};\\/\"*");
             HashSet<String> procedeed = new HashSet<String>();
+            fileCount+=1;
             while (words.hasMoreTokens()) {
                 String word = words.nextToken().toLowerCase();
                 if (word.equals("") || procedeed.contains(word)) {
@@ -51,12 +54,12 @@ public class InversedTermFrequency extends Configured implements Tool {
         public void reduce(Text key, Iterable<DoubleWritable> values,
                            Context context
         ) throws IOException, InterruptedException {
-            double fileCount = Double.parseDouble(String.valueOf(context.getConfiguration().get(FILE_COUNT)));
+//            double fileCount = Double.parseDouble(String.valueOf(context.getConfiguration().get(FILE_COUNT)));
             int occuredDocCount = 0;
             for (DoubleWritable v : values) {
                 occuredDocCount++;
             }
-            result.set(Math.log(fileCount/occuredDocCount));
+            result.set(Math.log10(fileCount/occuredDocCount));
             context.write(new Text(key), new Text(","+result));
         }
     }
