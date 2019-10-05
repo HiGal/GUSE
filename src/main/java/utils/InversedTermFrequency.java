@@ -74,7 +74,7 @@ public class InversedTermFrequency extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(DoubleWritable.class);
         FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
-        FileOutputFormat.setOutputPath(job, new Path(Paths.IDF_OUT));
+        FileOutputFormat.setOutputPath(job, new Path(Paths.ITF_OUT));
         Integer docCount = getCountOfFiles();
         job.getConfiguration().set(FILE_COUNT, docCount.toString());
         return job.waitForCompletion(true) ? 0 : 1;
