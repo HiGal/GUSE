@@ -63,7 +63,7 @@ public class Indexer extends Configured implements Tool {
                 String[] tmp1 = val1.split(",");
                 Text doc_id = new Text(tmp1[0]);
                 double tfidf = Double.parseDouble(tmp1[1])*idf;
-                context.write(doc_id,new Text("("+key+","+tfidf+")"));
+                context.write(doc_id,new Text(key+","+tfidf));
             }
 
         }
