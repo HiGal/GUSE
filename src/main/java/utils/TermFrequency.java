@@ -16,12 +16,12 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
-class TermFrequency extends Configured implements Tool {
+public class TermFrequency extends Configured implements Tool {
 
     public static class TokenizerMapper
             extends Mapper<Object, Text, Text, DoubleWritable> {
 
-        private final static DoubleWritable one = new DoubleWritable(1.0);
+        private final  DoubleWritable one = new DoubleWritable(1.0);
         private Text word = new Text();
 
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
@@ -29,10 +29,9 @@ class TermFrequency extends Configured implements Tool {
             Text content = new Text(json.get("text").toString());
             String doc_id = json.get("id").toString();
             StringTokenizer words = new StringTokenizer(content.toString(), " \'\n.,!?:()[]{};\\/\"*");
-            int total_words_num = 0;
+            int total_words_num = words.countTokens();
             while (words.hasMoreTokens()) {
                 String word = words.nextToken().toLowerCase();
-                total_words_num++;
                 if (word.equals("")) {
                     continue;
                 }
@@ -66,6 +65,8 @@ class TermFrequency extends Configured implements Tool {
         job.setReducerClass(Reduce.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(DoubleWritable.class);
+//        FileInputFormat.addInputPath(job, new Path(args[0]));
+//        FileOutputFormat.setOutputPath(job, new Path(args[1]));
         FileInputFormat.addInputPath(job, new Path("EnWikiSubset"));
         FileOutputFormat.setOutputPath(job, new Path("output"));
         return job.waitForCompletion(true) ? 0 : 1;
