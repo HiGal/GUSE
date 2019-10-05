@@ -45,7 +45,7 @@ public class InversedTermFrequency extends Configured implements Tool {
     }
 
     public static class Reduce
-            extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
+            extends Reducer<Text, DoubleWritable, Text, Text> {
         private DoubleWritable result = new DoubleWritable();
 
         public void reduce(Text key, Iterable<DoubleWritable> values,
@@ -57,7 +57,7 @@ public class InversedTermFrequency extends Configured implements Tool {
                 occuredDocCount++;
             }
             result.set(Math.log(fileCount/occuredDocCount));
-            context.write(key, result);
+            context.write(new Text(key), new Text(","+result));
         }
     }
 
@@ -71,17 +71,14 @@ public class InversedTermFrequency extends Configured implements Tool {
         job.setJarByClass(InversedTermFrequency.class);
         job.setMapperClass(TokenizerMapper.class);
         job.setReducerClass(Reduce.class);
+        job.setMapOutputValueClass(DoubleWritable.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(DoubleWritable.class);
+        job.setOutputValueClass(Text.class);
         FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
         FileOutputFormat.setOutputPath(job, new Path(Paths.ITF_OUT));
-        Integer docCount = getCountOfFiles();
-        job.getConfiguration().set(FILE_COUNT, docCount.toString());
+        int docCount = getCountOfFiles();
+        job.getConfiguration().set(FILE_COUNT, Integer.toString(docCount));
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
-    public static void main(String[] args) throws Exception {
-        int resultOfJob = ToolRunner.run(new InversedTermFrequency(), args);
-        System.exit(resultOfJob);
-    }
 }
