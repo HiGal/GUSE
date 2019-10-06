@@ -3,12 +3,14 @@ package utils;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -19,46 +21,58 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
+
 public class RelevanceAnalyzer extends Configured implements Tool {
 
-    public static class TokenizerMapper
-            extends Mapper<Object, Text, Text, DoubleWritable> {
+    public static final String QUERY = "query_text";
 
-        public void map(Object key, ArrayWritable vector, Context context) throws IOException, InterruptedException {
-            for (String s:vector.toStrings()){
-                //
+    public static class RelevanceMapper
+            extends Mapper<Object, Text, DoubleWritable, IntWritable> {
+
+        public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
+            StringTokenizer words = new StringTokenizer(document.toString(), "\t");
+            int docId = Integer.parseInt(words.nextToken());
+            String ww = words.nextToken();
+            JSONObject docVect = new JSONObject(ww);
+            JSONObject queryVec = new JSONObject(context.getConfiguration().get(QUERY));
+            double res = 0;
+            Iterator<String> keys = queryVec.keys();
+            while (keys.hasNext()) {
+                String qKey = keys.next();
+                if (docVect.has(qKey))
+                    res += Double.parseDouble(docVect.get(qKey).toString()) * Double.parseDouble(queryVec.get(qKey).toString());
             }
-
-            // context.write(new Text(""), Null);
+            context.write(new DoubleWritable(res * -1), new IntWritable(docId));
         }
     }
 
-    public static class Reduce
-            extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
-        private DoubleWritable result = new DoubleWritable();
+    public static class RelevanceReducer
+            extends Reducer<DoubleWritable, IntWritable, IntWritable, DoubleWritable> {
 
-        public void reduce(Text key, Iterable<DoubleWritable> values,
+        public void reduce(DoubleWritable Rank, Iterable<IntWritable> values,
                            Context context
         ) throws IOException, InterruptedException {
-            // reduce phase
+            IntWritable docId = values.iterator().next();
+            context.write(docId, new DoubleWritable(Rank.get() * -1));
         }
     }
 
 
     public int run(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-        Job job = Job.getInstance(getConf(), "word count");
-        job.setJarByClass(TermFrequency.class);
-        job.setMapperClass(TokenizerMapper.class);
-        job.setReducerClass(Reduce.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(DoubleWritable.class);
-        FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
-        FileOutputFormat.setOutputPath(job, new Path(Paths.TF_OUT));
+        Job job = Job.getInstance(getConf(), "relevance analyzer");
+        job.setJarByClass(RelevanceAnalyzer.class);
+        job.setMapperClass(RelevanceMapper.class);
+        job.setReducerClass(RelevanceReducer.class);
+        job.setOutputKeyClass(DoubleWritable.class);
+        job.setOutputValueClass(IntWritable.class);
+        FileInputFormat.addInputPath(job, new Path(Paths.RELV_IN1));
+        FileOutputFormat.setOutputPath(job, new Path(Paths.RELV_OUT));
+        job.getConfiguration().set(QUERY, "{\"bellegarrigue\":\"1.0\",\"german\":\"0.04054054054054054\",\"moderna\":\"2.0\"}");
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
     public static void main(String[] args) throws Exception {
-        int resultOfJob = ToolRunner.run(new TermFrequency(), args);
+        int resultOfJob = ToolRunner.run(new RelevanceAnalyzer(), args);
         System.exit(resultOfJob);
     }
 }
