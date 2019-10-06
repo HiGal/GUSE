@@ -12,7 +12,14 @@ import org.apache.hadoop.fs.Path;
 import java.util.*;
 
 public class QueryVectorizer {
-    public static String queryToVector(String[] args, Configuration configuration) throws Exception {
+
+    /**
+     * Return json in format {word:tf/idf} for each word in query
+     * @param args - args contain query string
+     * @param configuration - conf to open hdfs
+     * @return json formatted string
+     */
+    public static String query_to_vector(String[] args, Configuration configuration) throws Exception {
 
         Map<String, Double> queryVector = new HashMap<String, Double>();
 
