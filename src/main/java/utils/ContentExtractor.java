@@ -1,10 +1,14 @@
 package utils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -24,11 +28,15 @@ public class ContentExtractor extends Configured implements Tool {
 
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             String docIdsStr = context.getConfiguration().get("relevant_doc_ids");
+            Integer N = Integer.parseInt(context.getConfiguration().get("N"));
             ArrayList<String> relevantDocIdsList;
             relevantDocIdsList = new ArrayList<>();
             try {
-                relevantDocIdsList = (ArrayList<String>) CustomSerializer.fromString(docIdsStr);
-
+                ArrayList<String> temp = (ArrayList<String>) CustomSerializer.fromString(docIdsStr);
+                for (int i = 0; i < N && i< temp.size(); i++) {
+                    relevantDocIdsList.add(temp.get(i));
+                }
+                temp = null;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -54,13 +62,30 @@ public class ContentExtractor extends Configured implements Tool {
         }
     }
 
+    public ArrayList<String> readRelevantIds() throws IOException {
+        ArrayList<String> result = new ArrayList<>();
+        //Load file for IDF from vocabulary
+        FileSystem fs = FileSystem.get(getConf());
+        FSDataInputStream fileWithIDF = fs.open(new Path(Paths.CE_IDS));
 
-    public int run(String[] strings) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(fileWithIDF));
+
+        String line = br.readLine();
+        while (line != null) {
+            StringTokenizer lines = new StringTokenizer(line, "\t");
+
+            String id = lines.nextToken();
+            result.add(id);
+
+            line = br.readLine();
+        }
+        return result;
+    }
+
+    public int run(String[] args) throws Exception {
         Job job = Job.getInstance(getConf(), "content extractor");
-        ArrayList<String> relIDs = new ArrayList<>();
-        relIDs.add("12");
-        relIDs.add("25");
-
+        ArrayList<String> relIDs = readRelevantIds();
+        job.getConfiguration().set("N", args[0]);
         job.getConfiguration().set("relevant_doc_ids", CustomSerializer.toString(relIDs));
         job.setJarByClass(ContentExtractor.class);
         job.setMapperClass(DocumentMapper.class);

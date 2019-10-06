@@ -16,4 +16,5 @@ public class Paths {
 
     public static final String RELV_IN1 = "output/vectorizer/part-r-00000";
     public static final String RELV_OUT = "output/relevance";
+    public static final String CE_IDS = "output/relevance/part-r-00000";
 }
