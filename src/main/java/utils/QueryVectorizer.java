@@ -15,10 +15,11 @@ public class QueryVectorizer {
 
         //Get text query (last argument in args)
         String query = args[args.length - 1];
-        String[] queryWords = query.split(" ");
+        StringTokenizer queryWords = new StringTokenizer(query, " \'\n.,!?:()[]{};\\/\"*");
 
         //Calculate the QF for each word in the query and put to the map
-        for (String word : queryWords) {
+        while(queryWords.hasMoreTokens()) {
+            String word = queryWords.nextToken();
             if (queryVector.containsKey(word)) {
                 queryVector.put(word, queryVector.get(word) + 1.0);
             }
@@ -31,7 +32,7 @@ public class QueryVectorizer {
 
         //Load file for IDF from vocabulary
         FileSystem fs = FileSystem.get(configuration);
-        FSDataInputStream fileWithIDF = fs.open(new Path("output/idf/part-r-00000"));
+        FSDataInputStream fileWithIDF = fs.open(new Path(Paths.IND_IN2));
         ;
         BufferedReader br = new BufferedReader(new InputStreamReader(fileWithIDF));
 
