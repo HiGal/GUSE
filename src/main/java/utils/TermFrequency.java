@@ -13,7 +13,6 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
 public class TermFrequency extends Configured implements Tool {
@@ -28,20 +27,18 @@ public class TermFrequency extends Configured implements Tool {
             Text content = new Text(json.get("text").toString());
             String doc_id = json.get("id").toString();
             StringTokenizer words = new StringTokenizer(content.toString(), " \'\n.,!?:()[]{};\\/\"*");
-            int total_words_num = words.countTokens();
             while (words.hasMoreTokens()) {
                 String word = words.nextToken().toLowerCase();
                 if (word.equals("")) {
                     continue;
                 }
-                DoubleWritable freq = new DoubleWritable(one.get()/(double)total_words_num);
-                context.write(new Text("("+word+","+doc_id+")"), freq);
+                context.write(new Text(word+","+doc_id), one);
             }
         }
     }
 
     public static class Reduce
-            extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
+            extends Reducer<Text, DoubleWritable, Text, Text> {
         private DoubleWritable result = new DoubleWritable();
 
         public void reduce(Text key, Iterable<DoubleWritable> values,
@@ -51,8 +48,11 @@ public class TermFrequency extends Configured implements Tool {
             for (DoubleWritable val : values) {
                 sum += val.get();
             }
+            String[] splitted_key = key.toString().split(",");
+            Text new_key = new Text(splitted_key[0]);
             result.set(sum);
-            context.write(key, result);
+            Text res = new Text(splitted_key[1]+","+result);
+            context.write(new_key, res);
         }
     }
 
@@ -62,15 +62,12 @@ public class TermFrequency extends Configured implements Tool {
         job.setJarByClass(TermFrequency.class);
         job.setMapperClass(TokenizerMapper.class);
         job.setReducerClass(Reduce.class);
+        job.setMapOutputValueClass(DoubleWritable.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(DoubleWritable.class);
+        job.setOutputValueClass(Text.class);
         FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
         FileOutputFormat.setOutputPath(job, new Path(Paths.TF_OUT));
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
-    public static void main(String[] args) throws Exception {
-        int resultOfJob = ToolRunner.run(new TermFrequency(),args);
-        System.exit(resultOfJob);
-    }
 }
