@@ -1,44 +1,62 @@
-public class QueryVectorizer{
-    public static Map<String, Double> query_to_vector(String[] args) throws Exception {
+package utils;
 
-        Map<String, Double> queryVector = new HashMap<String, Integer>();
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import java.io.*;
+import java.util.StringTokenizer;
+import org.apache.hadoop.fs.Path;
+import java.util.*;
+
+public class QueryVectorizer {
+    public static String query_to_vector(String[] args, Configuration configuration) throws Exception {
+
+        Map<String, Double> queryVector = new HashMap<String, Double>();
 
         //Get text query (last argument in args)
-        String query = args[args.length-1];
+        String query = args[args.length - 1];
         String[] queryWords = query.split(" ");
-        int wordsNum = queryWords.length;
 
-        //Culculate the QF for each word in the query and put to the map
-        for(String word : queryWords){
-            if(queryVector.containsKey(word)){
-                queryVector.put(word, map.get(word) + 1/wordsNum);
+        //Calculate the QF for each word in the query and put to the map
+        for (String word : queryWords) {
+            if (queryVector.containsKey(word)) {
+                queryVector.put(word, queryVector.get(word) + 1.0);
             }
+            else{
+                queryVector.put(word, 1.0);
+            }
+
         }
 
 
-//TODO Load file for IDF from vocadulary
-        Configuration conf = new Configuration();
+        //Load file for IDF from vocabulary
+        FileSystem fs = FileSystem.get(configuration);
+        FSDataInputStream fileWithIDF = fs.open(new Path("output/idf/part-r-00000"));
+        ;
+        BufferedReader br = new BufferedReader(new InputStreamReader(fileWithIDF));
 
-//TODO check if it the correct configs to open files in hadoop
-        conf.addResource(new Path("/hadoop/projects/hadoop-1.0.4/conf/core-site.xml"));
-        conf.addResource(new Path("/hadoop/projects/hadoop-1.0.4/conf/hdfs-site.xml"));
+        // For each pair (word, idf)
+        String line = br.readLine();
+        while (line != null) {
+            StringTokenizer lines = new StringTokenizer(line, "\t");
 
-        Path path = new Path("output/idf/part-r-00000");
-        FileSystem fs = path.getFileSystem(conf);
-        FSDataInputStream fileWithIDF = fs.open(path);
-        StringTokenizer lines = new StringTokenizer(fileWithIDF.toString(), "\t");
-
-        while (lines.hasMoreTokens()) {
-            //read each pair of (word,idf)
-            String word = words.nextToken();
-            String idf = words.nextToken();
-
-            //if word in mup, update value in map
-            if(queryVector.containsKey(word)){
-                queryVector.put(word, map.get(word) * Double.parseDouble(idf);
+            String word = lines.nextToken();
+            String idf = lines.nextToken();
+            //If word in map, update value in map
+            if (queryVector.containsKey(word)) {
+                queryVector.put(word, queryVector.get(word) / Double.parseDouble(idf.substring(1)));
             }
+            line = br.readLine();
         }
-        return(queryVector);
-    }
+
+        String result = "";
+        for (String key: queryVector.keySet()){
+            String value = queryVector.get(key).toString();
+            result = result+",\""+key+"\":\""+value+"\"";
+        }
+        result = "{"+result.substring(1)+"}";
+
+        return(result);
+}
 
 }
