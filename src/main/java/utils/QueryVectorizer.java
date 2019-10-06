@@ -3,12 +3,22 @@ package utils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
+
 import java.io.*;
 import java.util.StringTokenizer;
+
 import org.apache.hadoop.fs.Path;
+
 import java.util.*;
 
 public class QueryVectorizer {
+
+    /**
+     * Return json in format {word:tf/idf} for each word in query
+     * @param args - args contain query string
+     * @param configuration - conf to open hdfs
+     * @return json formatted string
+     */
     public static String query_to_vector(String[] args, Configuration configuration) throws Exception {
 
         Map<String, Double> queryVector = new HashMap<String, Double>();
@@ -18,12 +28,11 @@ public class QueryVectorizer {
         StringTokenizer queryWords = new StringTokenizer(query, " \'\n.,!?:()[]{};\\/\"*");
 
         //Calculate the QF for each word in the query and put to the map
-        while(queryWords.hasMoreTokens()) {
+        while (queryWords.hasMoreTokens()) {
             String word = queryWords.nextToken();
             if (queryVector.containsKey(word)) {
                 queryVector.put(word, queryVector.get(word) + 1.0);
-            }
-            else{
+            } else {
                 queryVector.put(word, 1.0);
             }
 
@@ -51,13 +60,13 @@ public class QueryVectorizer {
         }
 
         String result = "";
-        for (String key: queryVector.keySet()){
+        for (String key : queryVector.keySet()) {
             String value = queryVector.get(key).toString();
-            result = result+",\""+key+"\":\""+value+"\"";
+            result = result + ",\"" + key + "\":\"" + value + "\"";
         }
-        result = "{"+result.substring(1)+"}";
+        result = "{" + result.substring(1) + "}";
 
-        return(result);
-}
+        return (result);
+    }
 
 }
