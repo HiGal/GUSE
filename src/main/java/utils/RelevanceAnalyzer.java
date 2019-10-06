@@ -1,14 +1,11 @@
 package utils;
 
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -58,7 +55,7 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     }
 
 
-    public int run(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
+    public int run(String[] args) throws Exception{
         Job job = Job.getInstance(getConf(), "relevance analyzer");
         job.setJarByClass(RelevanceAnalyzer.class);
         job.setMapperClass(RelevanceMapper.class);
@@ -67,7 +64,7 @@ public class RelevanceAnalyzer extends Configured implements Tool {
         job.setOutputValueClass(IntWritable.class);
         FileInputFormat.addInputPath(job, new Path(Paths.RELV_IN1));
         FileOutputFormat.setOutputPath(job, new Path(Paths.RELV_OUT));
-        job.getConfiguration().set(QUERY, "{\"bellegarrigue\":\"1.0\",\"german\":\"0.04054054054054054\",\"moderna\":\"2.0\"}");
+        job.getConfiguration().set(QUERY, QueryVectorizer.queryToVector(args, job.getConfiguration()));
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
