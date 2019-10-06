@@ -16,20 +16,27 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.StringTokenizer;
 
-public class InversedTermFrequency extends Configured implements Tool {
-
-
+/**
+ * Calculate Inversed Term Frequency for each word in all documents
+ */
+public class InversedDocumentFrequency extends Configured implements Tool {
 
     public static class TokenizerMapper
             extends Mapper<Object, Text, Text, DoubleWritable> {
 
         private final DoubleWritable one = new DoubleWritable(1.0);
 
-
+        /**
+         * Map function splits text into words and creates tuples (word, 1) for each unique word in document
+         * @param key - default key
+         * @param document - json doc
+         * @param context - store
+         */
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             JSONObject json = new JSONObject(document.toString());
             Text content = new Text(json.get("text").toString());
             StringTokenizer words = new StringTokenizer(content.toString(), " \'\n.,!?:()[]{};\\/\"*");
+            // add word to hash set if it was procedeed
             HashSet<String> procedeed = new HashSet<String>();
             while (words.hasMoreTokens()) {
                 String word = words.nextToken().toLowerCase();
@@ -46,6 +53,13 @@ public class InversedTermFrequency extends Configured implements Tool {
             extends Reducer<Text, DoubleWritable, Text, Text> {
         private DoubleWritable result = new DoubleWritable();
 
+        /**
+         * Reduce function sums up all ones (word : 1 1 1 1) to get count of documents
+         * where word has been found, (e.g word: 4)
+         * @param key - word
+         * @param values - array of ones
+         * @param context - store
+         */
         public void reduce(Text key, Iterable<DoubleWritable> values,
                            Context context
         ) throws IOException, InterruptedException {
@@ -61,7 +75,7 @@ public class InversedTermFrequency extends Configured implements Tool {
 
     public int run(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
         Job job = Job.getInstance(getConf(), "idf");
-        job.setJarByClass(InversedTermFrequency.class);
+        job.setJarByClass(InversedDocumentFrequency.class);
         job.setMapperClass(TokenizerMapper.class);
         job.setReducerClass(Reduce.class);
         job.setMapOutputValueClass(DoubleWritable.class);
