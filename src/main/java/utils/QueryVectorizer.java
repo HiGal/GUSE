@@ -19,7 +19,7 @@ public class QueryVectorizer {
      * @param configuration - conf to open hdfs
      * @return json formatted string
      */
-    public static String query_to_vector(String[] args, Configuration configuration) throws Exception {
+    public static String queryToVector(String[] args, Configuration configuration) throws Exception {
 
         Map<String, Double> queryVector = new HashMap<String, Double>();
 

@@ -12,4 +12,6 @@ public class Paths {
     public static final String IND_OUT = "output/indexer";
     public static final String VECT_IN = "output/indexer/part-r-00000";
     public static final String VECT_OUT = "output/vectorizer";
+    public static final String RELV_IN1 = "output/vectorizer/part-r-00000";
+    public static final String RELV_OUT = "output/relevance";
 }
