@@ -1,11 +1,12 @@
 package utils;
 
-import javafx.scene.shape.PathElement;
 
 public  class Paths {
-    static final String INPUT_PATH = "EnWikiSubset";
-    static final String ITF_OUT = "output/idf";
-    static final String TF_OUT = "output/tf";
-    static final String IDF_IN = "output/idf/part-r-00000";
+    public static final String INPUT_PATH = "EnWikiSubset";
+    public static final String ITF_OUT = "output/idf";
+    public static final String TF_OUT = "output/tf";
+    public static final String IND_IN2 = "output/idf/part-r-00000";
+    public static final String IND_IN1 = "output/tf/part-r-00000";
+    public static final String IND_OUT = "output/indexer";
 
 }

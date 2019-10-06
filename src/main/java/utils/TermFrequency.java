@@ -13,7 +13,6 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
 public class TermFrequency extends Configured implements Tool {
@@ -28,14 +27,12 @@ public class TermFrequency extends Configured implements Tool {
             Text content = new Text(json.get("text").toString());
             String doc_id = json.get("id").toString();
             StringTokenizer words = new StringTokenizer(content.toString(), " \'\n.,!?:()[]{};\\/\"*");
-            int total_words_num = words.countTokens();
             while (words.hasMoreTokens()) {
                 String word = words.nextToken().toLowerCase();
                 if (word.equals("")) {
                     continue;
                 }
-                DoubleWritable freq = new DoubleWritable(one.get()/(double)total_words_num);
-                context.write(new Text(word+","+doc_id), freq);
+                context.write(new Text(word+","+doc_id), one);
             }
         }
     }

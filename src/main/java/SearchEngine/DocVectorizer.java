@@ -2,7 +2,6 @@ package SearchEngine;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -14,8 +13,6 @@ import org.apache.hadoop.util.Tool;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.StringTokenizer;
 
 public class DocVectorizer extends Configured implements Tool {
@@ -39,8 +36,6 @@ public class DocVectorizer extends Configured implements Tool {
                     String[] tmp = val.toString().split(",");
                     json.put(tmp[0],tmp[1]);
                 }
-
-
                 context.write(key, new Text(json.toString()));
             }
         }
