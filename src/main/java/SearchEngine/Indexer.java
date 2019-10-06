@@ -77,7 +77,6 @@ public class Indexer extends Configured implements Tool {
         FileInputFormat.addInputPath(job, new Path(Paths.IND_IN1));
         FileInputFormat.addInputPath(job, new Path(Paths.IND_IN2));
         FileOutputFormat.setOutputPath(job, new Path(Paths.IND_OUT));
-        System.out.println(QueryVectorizer.query_to_vector(strings,job.getConfiguration()));
         return job.waitForCompletion(true) ? 0 : 1;
     }
 
