@@ -16,5 +16,6 @@ public class Paths {
     public static final String RELV_OUT = "output/relevance";
     public static final String CE_IDS = "output/relevance/part-r-00000";
     public static final String QUERY_OUT = "output/query-out";
+    public static final String ID_JSON = "output/query-out/part-r-00000";
 
 }
