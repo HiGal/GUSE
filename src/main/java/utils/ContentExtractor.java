@@ -10,8 +10,6 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BooleanWritable;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -92,7 +90,7 @@ public class ContentExtractor extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
         FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
-        FileOutputFormat.setOutputPath(job, new Path(Paths.TEST));
+        FileOutputFormat.setOutputPath(job, new Path(Paths.QUERY_OUT));
         return job.waitForCompletion(true) ? 0 : 1;
 
     }
