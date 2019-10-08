@@ -13,7 +13,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -28,32 +27,25 @@ public class ContentExtractor extends Configured implements Tool {
     public static class DocumentMapper extends Mapper<Object, Text, Text, Text> {
 
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
-            String docIdsStr = context.getConfiguration().get(REL_DOC_IDS);
-            Integer N = Integer.parseInt(context.getConfiguration().get("N"));
+            JSONObject jsonObject = new JSONObject(document.toString());
+            String docId = jsonObject.get(JSON_FIELD_ID).toString();
             ArrayList<String> relevantDocIdsList;
-            relevantDocIdsList = new ArrayList<>();
             try {
-                ArrayList<String> temp = (ArrayList<String>) CustomSerializer.fromString(docIdsStr);
-                for (int i = 0; i < N && i < temp.size(); i++) {
-                    relevantDocIdsList.add(temp.get(i));
+                relevantDocIdsList = (ArrayList<String>) CustomSerializer.fromString(context.getConfiguration().get(REL_DOC_IDS));
+                boolean relevant = relevantDocIdsList.contains(docId);
+                if (relevant) {
+                    context.write(new Text(docId), document);
                 }
-                temp = null;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
 
-            JSONObject jsonObject = new JSONObject(document.toString());
-            String docId = jsonObject.get(JSON_FIELD_ID).toString();
-            boolean relevant = relevantDocIdsList.contains(docId);
-            if (relevant) {
-                context.write(new Text(docId), document);
-            }
 
         }
 
     }
 
-    public ArrayList<String> readRelevantIds() throws IOException {
+    private ArrayList<String> readNRelevantIds(int N) throws IOException {
         ArrayList<String> result = new ArrayList<>();
         //Load file for IDF from vocabulary
         FileSystem fs = FileSystem.get(getConf());
@@ -62,7 +54,8 @@ public class ContentExtractor extends Configured implements Tool {
         BufferedReader br = new BufferedReader(new InputStreamReader(fileWithIDF));
 
         String line = br.readLine();
-        while (line != null) {
+        int iter = 0;
+        while (line != null && iter < N) {
             StringTokenizer lines = new StringTokenizer(line, "\t");
 
             String id = lines.nextToken();
@@ -75,8 +68,7 @@ public class ContentExtractor extends Configured implements Tool {
 
     public int run(String[] args) throws Exception {
         Job job = Job.getInstance(getConf(), JOB_NAME);
-        ArrayList<String> relIDs = readRelevantIds();
-        job.getConfiguration().set("N", args[0]);
+        ArrayList<String> relIDs = readNRelevantIds(Integer.parseInt(args[0]));
         job.getConfiguration().set(REL_DOC_IDS, CustomSerializer.toString(relIDs));
         job.setJarByClass(ContentExtractor.class);
         job.setMapperClass(DocumentMapper.class);
@@ -85,7 +77,6 @@ public class ContentExtractor extends Configured implements Tool {
         FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
         FileOutputFormat.setOutputPath(job, new Path(Paths.QUERY_OUT));
         return job.waitForCompletion(true) ? 0 : 1;
-
     }
 
     public static void main(String[] args) throws Exception {
