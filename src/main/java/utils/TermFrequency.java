@@ -35,7 +35,8 @@ public class TermFrequency extends Configured implements Tool {
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             JSONObject json = new JSONObject(document.toString());
             Text content = new Text(json.get("text").toString());
-            String doc_id = json.get("id").toString() + " " +json.get("title") .toString();
+            String str = json.get("title") .toString().replaceAll(","," ");
+            String doc_id = json.get("id").toString() + " " +str;
 
             StringTokenizer words = new StringTokenizer(content.toString(), " \'\n.,!?:()[]{};\\/\"*");
             while (words.hasMoreTokens()) {
