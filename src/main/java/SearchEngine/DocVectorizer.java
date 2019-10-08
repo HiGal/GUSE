@@ -60,7 +60,7 @@ public class DocVectorizer extends Configured implements Tool {
         }
     }
 
-    public int run(String[] strings) throws Exception {
+    public int run(String[] args) throws Exception {
         Job job = Job.getInstance(getConf(), "indexer");
         job.setJarByClass(DocVectorizer.class);
         job.setMapperClass(TokenizerMapper.class);

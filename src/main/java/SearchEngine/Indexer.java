@@ -83,7 +83,7 @@ public class Indexer extends Configured implements Tool {
         }
     }
 
-    public int run(String[] strings) throws Exception {
+    public int run(String[] args) throws Exception {
         Job job = Job.getInstance(getConf(), "indexer");
         job.setJarByClass(Indexer.class);
         job.setMapperClass(TokenizerMapper.class);
@@ -94,6 +94,7 @@ public class Indexer extends Configured implements Tool {
 
         FileInputFormat.addInputPath(job, new Path(Paths.IND_IN1));
         FileInputFormat.addInputPath(job, new Path(Paths.IND_IN2));
+//        FileOutputFormat.setOutputPath(job, new Path(Paths.IND_OUT));
         FileOutputFormat.setOutputPath(job, new Path(Paths.IND_OUT));
         return job.waitForCompletion(true) ? 0 : 1;
     }
