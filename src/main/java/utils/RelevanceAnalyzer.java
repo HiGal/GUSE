@@ -80,7 +80,8 @@ public class RelevanceAnalyzer extends Configured implements Tool {
         job.setOutputKeyClass(DoubleWritable.class);
         job.setOutputValueClass(IntWritable.class);
         FileSystem fs = FileSystem.get(getConf());
-        if (!fs.delete(new Path(Paths.RELV_OUT), true)) {
+        Path out = new Path(Paths.RELV_OUT);
+        if (fs.exists(out) & !fs.delete(out, true)) {
             System.out.println("Remove already existing output directory (output/relevance) first, automatic remove failed");
             System.exit(-1);
         }
