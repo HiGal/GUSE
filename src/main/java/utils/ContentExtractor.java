@@ -4,54 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.StringTokenizer;
-
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
-import org.json.JSONObject;
 
-public class ContentExtractor extends Configured implements Tool {
-    private final static String JOB_NAME = "content extractor";
-    private final static String REL_DOC_IDS = "relevant_doc_ids";
-    private final static String JSON_FIELD_ID = "id";
 
-    public static class DocumentMapper extends Mapper<Object, Text, IntWritable, Text> {
-        /**
-         * Map returns relevant documents found where key is their ID
-         *
-         * @param key      default key
-         * @param document document text JSON
-         * @param context  store ID , document
-         * @throws IOException
-         * @throws InterruptedException
-         */
-        public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
-            JSONObject jsonObject = new JSONObject(document.toString());
-            String docId = jsonObject.get(JSON_FIELD_ID).toString();
-            ArrayList<String> relevantDocIdsList;
-            try {
-                relevantDocIdsList = (ArrayList<String>) CustomSerializer.fromString(context.getConfiguration().get(REL_DOC_IDS));
-                boolean relevant = relevantDocIdsList.contains(docId);
-                if (relevant) {
-                    context.write(new IntWritable(Integer.parseInt(docId)), document);
-                }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+public class ContentExtractor {
+    private final static java.lang.String JOB_NAME = "content extractor";
+    private final static java.lang.String REL_DOC_IDS = "relevant_doc_ids";
+    private final static java.lang.String JSON_FIELD_ID = "id";
 
     /**
      * Reads list of N relevant id strings
@@ -60,22 +21,19 @@ public class ContentExtractor extends Configured implements Tool {
      * @return list of ids
      * @throws IOException
      */
-    private ArrayList<String> readNRelevantIds(int N) throws IOException {
-        ArrayList<String> result = new ArrayList<>();
+    private static ArrayList<java.lang.String> readNRelevantIds(int N, org.apache.hadoop.conf.Configuration c) throws IOException {
+        ArrayList<java.lang.String> result = new ArrayList<>();
         //Load file for IDF from vocabulary
-        FileSystem fs = FileSystem.get(getConf());
+        FileSystem fs = FileSystem.get(c);
         FSDataInputStream fileWithIDRank = fs.open(new Path(Paths.CE_IDS));
 
         BufferedReader br = new BufferedReader(new InputStreamReader(fileWithIDRank));
 
-        String line = br.readLine();
+        java.lang.String line = br.readLine();
         int iter = 0;
         while (line != null && iter < N) {
-            StringTokenizer lines = new StringTokenizer(line, "\t");
-
-            String id = lines.nextToken();
-            result.add(id);
-
+            result.add(line);
+            iter++;
             line = br.readLine();
         }
         return result;
@@ -84,94 +42,16 @@ public class ContentExtractor extends Configured implements Tool {
     /**
      * Runs the MapReduce
      *
-     * @param args 1 parameter N, number of relevant IDs to be shown
-     * @return
-     * @throws Exception
+     * @param args 1 parameter N, arg 2 number of relevant IDs to be shown
      */
-    public int run(String[] args) throws Exception {
-        int N = Integer.parseInt(args[0]);
-        Job job = Job.getInstance(getConf(), JOB_NAME);
-        ArrayList<String> relIDs = readNRelevantIds(N);
-        job.getConfiguration().set(REL_DOC_IDS, CustomSerializer.toString(relIDs));
-        job.setJarByClass(ContentExtractor.class);
-        job.setMapperClass(DocumentMapper.class);
-        job.setOutputKeyClass(IntWritable.class);
-        job.setOutputValueClass(Text.class);
-        FileSystem fs = FileSystem.get(getConf());
-        fs.delete(new Path(Paths.QUERY_OUT), true);
-
-        FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
-        FileOutputFormat.setOutputPath(job, new Path(Paths.QUERY_OUT));
-        int completion = job.waitForCompletion(true) ? 0 : 1;
-        printIDRankTitle(N);
-        return completion;
-    }
-
-    /**
-     * Returns HashMap of ID:JSON of extracted documents
-     *
-     * @return HashMap
-     * @throws IOException
-     */
-    private HashMap<Integer, JSONObject> readJSONs() throws IOException {
-        HashMap<Integer, JSONObject> result = new HashMap<>();
-
-        FileSystem fs = FileSystem.get(getConf());
-        FSDataInputStream fileWithIDJSON = fs.open(new Path(Paths.ID_JSON));
-        BufferedReader brJSON = new BufferedReader(new InputStreamReader(fileWithIDJSON));
-        String lineJSON = brJSON.readLine();
-        while (lineJSON != null) {
-            StringTokenizer linesJSON = new StringTokenizer(lineJSON, "\t");
-            int id = Integer.parseInt(linesJSON.nextToken());
-            JSONObject json = new JSONObject(linesJSON.nextToken());
-            result.put(id, json);
-
-            lineJSON = brJSON.readLine();
+    public static int run(java.lang.String[] args, org.apache.hadoop.conf.Configuration c) throws Exception {
+        int N = Integer.parseInt(args[1].toString());
+        ArrayList<java.lang.String> res = readNRelevantIds(N, c);
+        System.out.println("ID  |   Title   | Rank");
+        for (java.lang.String r : res) {
+            System.out.println(r);
         }
-        return result;
+        return 0;
     }
 
-    /**
-     * Prints document ID, title and its rank to the console
-     *
-     * @param N number of relevant documents
-     * @throws IOException
-     */
-    private void printIDRankTitle(int N) throws IOException {
-        //Load file for IDF from vocabulary
-        FileSystem fs = FileSystem.get(getConf());
-        FSDataInputStream fileWithIDRank = fs.open(new Path(Paths.CE_IDS));
-        BufferedReader brRank = new BufferedReader(new InputStreamReader(fileWithIDRank));
-
-        HashMap<Integer, JSONObject> JSONMap = readJSONs();
-
-        String lineRank = brRank.readLine();
-        int iter = 0;
-        while (lineRank != null && iter < N) {
-            StringTokenizer linesRank = new StringTokenizer(lineRank, "\t");
-
-            int id = Integer.parseInt(linesRank.nextToken());
-            String rank = linesRank.nextToken();
-
-
-            String title = (String) JSONMap.get(id).get("title");
-            System.out.printf("ID:%5s | Title:%10s | Rank:%5s\n", id, title, rank);
-
-            lineRank = brRank.readLine();
-            iter++;
-        }
-    }
-
-    /**
-     * Entrypoint
-     *
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-
-        int resultOfJob = ToolRunner.run(new ContentExtractor(), args);
-
-        System.exit(resultOfJob);
-    }
 }

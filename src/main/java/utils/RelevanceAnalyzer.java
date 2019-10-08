@@ -27,7 +27,7 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     public static final String QUERY = "query_text";
 
     public static class RelevanceMapper
-            extends Mapper<Object, Text, DoubleWritable, IntWritable> {
+            extends Mapper<Object, Text, DoubleWritable, Text> {
 
         /**
          * Map Function multiplies Query TF/IDF vector by each Document TF/IDF vector
@@ -38,7 +38,7 @@ public class RelevanceAnalyzer extends Configured implements Tool {
          */
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             StringTokenizer words = new StringTokenizer(document.toString(), "\t");
-            int docId = Integer.parseInt(words.nextToken());
+            Text docId = new Text(words.nextToken());
             String ww = words.nextToken();
             JSONObject docVect = new JSONObject(ww);
             JSONObject queryVec = new JSONObject(context.getConfiguration().get(QUERY));
@@ -49,12 +49,12 @@ public class RelevanceAnalyzer extends Configured implements Tool {
                 if (docVect.has(qKey))
                     res += Double.parseDouble(docVect.get(qKey).toString()) * Double.parseDouble(queryVec.get(qKey).toString());
             }
-            context.write(new DoubleWritable(res * -1), new IntWritable(docId));
+            context.write(new DoubleWritable(res * -1), new Text(docId));
         }
     }
 
     public static class RelevanceReducer
-            extends Reducer<DoubleWritable, IntWritable, IntWritable, DoubleWritable> {
+            extends Reducer<DoubleWritable, Text, Text, DoubleWritable> {
 
         /**
          * Reduce class just puts to store doc ids sorted by relevance (rank)
@@ -63,10 +63,10 @@ public class RelevanceAnalyzer extends Configured implements Tool {
          * @param values  - document id
          * @param context - store
          */
-        public void reduce(DoubleWritable Rank, Iterable<IntWritable> values,
+        public void reduce(DoubleWritable Rank, Iterable<Text> values,
                            Context context
         ) throws IOException, InterruptedException {
-            IntWritable docId = values.iterator().next();
+            Text docId = new Text(values.iterator().next().toString());
             context.write(docId, new DoubleWritable(Rank.get() * -1));
         }
     }
@@ -78,7 +78,7 @@ public class RelevanceAnalyzer extends Configured implements Tool {
         job.setMapperClass(RelevanceMapper.class);
         job.setReducerClass(RelevanceReducer.class);
         job.setOutputKeyClass(DoubleWritable.class);
-        job.setOutputValueClass(IntWritable.class);
+        job.setOutputValueClass(Text.class);
         FileSystem fs = FileSystem.get(getConf());
         Path out = new Path(Paths.RELV_OUT);
         if ((fs.exists(out) & !fs.delete(out, true)) | (fs.exists(new Path(Paths.QUERY_OUT)) & !fs.delete(new Path(Paths.QUERY_OUT), true))) {
@@ -88,7 +88,9 @@ public class RelevanceAnalyzer extends Configured implements Tool {
         FileInputFormat.addInputPath(job, new Path(Paths.RELV_IN1));
         FileOutputFormat.setOutputPath(job, new Path(Paths.RELV_OUT));
         job.getConfiguration().set(QUERY, QueryVectorizer.queryToVector(args, job.getConfiguration()));
-        return job.waitForCompletion(true) ? 0 : 1;
+        int k = job.waitForCompletion(true) ? 0 : 1;
+        ContentExtractor.run(args, getConf());
+        return k;
     }
 
     public static void main(String[] args) throws Exception {
