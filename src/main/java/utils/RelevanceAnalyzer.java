@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -18,7 +19,9 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
-
+/**
+ * Compute Relevance of Query to all documents
+ */
 public class RelevanceAnalyzer extends Configured implements Tool {
 
     public static final String QUERY = "query_text";
@@ -26,6 +29,13 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     public static class RelevanceMapper
             extends Mapper<Object, Text, DoubleWritable, IntWritable> {
 
+        /**
+         * Map Function multiplies Query TF/IDF vector by each Document TF/IDF vector
+         *
+         * @param key      - default key
+         * @param document - json document
+         * @param context  - store (rank, doc_id) to allow shuffle stage automatically sort by rank
+         */
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             StringTokenizer words = new StringTokenizer(document.toString(), "\t");
             int docId = Integer.parseInt(words.nextToken());
@@ -46,6 +56,13 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     public static class RelevanceReducer
             extends Reducer<DoubleWritable, IntWritable, IntWritable, DoubleWritable> {
 
+        /**
+         * Reduce class just puts to store doc ids sorted by relevance (rank)
+         *
+         * @param Rank    - rank
+         * @param values  - document id
+         * @param context - store
+         */
         public void reduce(DoubleWritable Rank, Iterable<IntWritable> values,
                            Context context
         ) throws IOException, InterruptedException {
@@ -55,13 +72,18 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     }
 
 
-    public int run(String[] args) throws Exception{
+    public int run(String[] args) throws Exception {
         Job job = Job.getInstance(getConf(), "relevance analyzer");
         job.setJarByClass(RelevanceAnalyzer.class);
         job.setMapperClass(RelevanceMapper.class);
         job.setReducerClass(RelevanceReducer.class);
         job.setOutputKeyClass(DoubleWritable.class);
         job.setOutputValueClass(IntWritable.class);
+        FileSystem fs = FileSystem.get(getConf());
+        if (!fs.delete(new Path(Paths.RELV_OUT), true)) {
+            System.out.println("Remove already existing output directory (output/relevance) first, automatic remove failed");
+            System.exit(-1);
+        }
         FileInputFormat.addInputPath(job, new Path(Paths.RELV_IN1));
         FileOutputFormat.setOutputPath(job, new Path(Paths.RELV_OUT));
         job.getConfiguration().set(QUERY, QueryVectorizer.queryToVector(args, job.getConfiguration()));

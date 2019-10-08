@@ -24,7 +24,7 @@ public class QueryVectorizer {
         Map<String, Double> queryVector = new HashMap<String, Double>();
 
         //Get text query (last argument in args)
-        String query = args[args.length - 1];
+        String query = args[args.length - 1].toLowerCase();
         StringTokenizer queryWords = new StringTokenizer(query, " \'\n.,!?:()[]{};\\/\"*");
 
         //Calculate the QF for each word in the query and put to the map
