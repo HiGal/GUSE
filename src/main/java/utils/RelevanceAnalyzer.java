@@ -18,7 +18,9 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
-
+/**
+ * Compute Relevance of Query to all documents
+ */
 public class RelevanceAnalyzer extends Configured implements Tool {
 
     public static final String QUERY = "query_text";
@@ -26,6 +28,12 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     public static class RelevanceMapper
             extends Mapper<Object, Text, DoubleWritable, IntWritable> {
 
+        /**
+         * Map Function multiplies Query TF/IDF vector by each Document TF/IDF vector
+         * @param key - default key
+         * @param document - json document
+         * @param context - store (rank, doc_id) to allow shuffle stage automatically sort by rank
+         */
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
             StringTokenizer words = new StringTokenizer(document.toString(), "\t");
             int docId = Integer.parseInt(words.nextToken());
@@ -46,6 +54,12 @@ public class RelevanceAnalyzer extends Configured implements Tool {
     public static class RelevanceReducer
             extends Reducer<DoubleWritable, IntWritable, IntWritable, DoubleWritable> {
 
+        /**
+         * Reduce class just puts to store doc ids sorted by relevance (rank)
+         * @param Rank - rank
+         * @param values - document id
+         * @param context - store
+         */
         public void reduce(DoubleWritable Rank, Iterable<IntWritable> values,
                            Context context
         ) throws IOException, InterruptedException {
