@@ -21,17 +21,20 @@ import org.apache.hadoop.util.ToolRunner;
 import org.json.JSONObject;
 
 public class ContentExtractor extends Configured implements Tool {
+    private final static String JOB_NAME = "content extractor";
+    private final static String REL_DOC_IDS = "relevant_doc_ids";
+    private final static String JSON_FIELD_ID = "id";
 
     public static class DocumentMapper extends Mapper<Object, Text, Text, Text> {
 
         public void map(Object key, Text document, Context context) throws IOException, InterruptedException {
-            String docIdsStr = context.getConfiguration().get("relevant_doc_ids");
+            String docIdsStr = context.getConfiguration().get(REL_DOC_IDS);
             Integer N = Integer.parseInt(context.getConfiguration().get("N"));
             ArrayList<String> relevantDocIdsList;
             relevantDocIdsList = new ArrayList<>();
             try {
                 ArrayList<String> temp = (ArrayList<String>) CustomSerializer.fromString(docIdsStr);
-                for (int i = 0; i < N && i< temp.size(); i++) {
+                for (int i = 0; i < N && i < temp.size(); i++) {
                     relevantDocIdsList.add(temp.get(i));
                 }
                 temp = null;
@@ -40,7 +43,7 @@ public class ContentExtractor extends Configured implements Tool {
             }
 
             JSONObject jsonObject = new JSONObject(document.toString());
-            String docId = jsonObject.get("id").toString();
+            String docId = jsonObject.get(JSON_FIELD_ID).toString();
             boolean relevant = relevantDocIdsList.contains(docId);
             if (relevant) {
                 context.write(new Text(docId), document);
@@ -48,16 +51,6 @@ public class ContentExtractor extends Configured implements Tool {
 
         }
 
-    }
-
-    public static class DocumentReducer extends Reducer<Text, Text, Text, Text> {
-
-        public void reduce(Text key, Iterable<Text> values,
-                           Mapper.Context context
-        ) throws IOException, InterruptedException {
-            Text doc = values.iterator().next();
-            context.write(key, doc);
-        }
     }
 
     public ArrayList<String> readRelevantIds() throws IOException {
@@ -81,10 +74,10 @@ public class ContentExtractor extends Configured implements Tool {
     }
 
     public int run(String[] args) throws Exception {
-        Job job = Job.getInstance(getConf(), "content extractor");
+        Job job = Job.getInstance(getConf(), JOB_NAME);
         ArrayList<String> relIDs = readRelevantIds();
         job.getConfiguration().set("N", args[0]);
-        job.getConfiguration().set("relevant_doc_ids", CustomSerializer.toString(relIDs));
+        job.getConfiguration().set(REL_DOC_IDS, CustomSerializer.toString(relIDs));
         job.setJarByClass(ContentExtractor.class);
         job.setMapperClass(DocumentMapper.class);
         job.setOutputKeyClass(Text.class);
