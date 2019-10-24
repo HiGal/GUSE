@@ -81,7 +81,6 @@ public class InversedDocumentFrequency extends Configured implements Tool {
         job.setMapOutputValueClass(DoubleWritable.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-//        FileInputFormat.addInputPath(job, new Path(Paths.INPUT_PATH));
         FileInputFormat.addInputPath(job, new Path(args[1]));
 
         FileOutputFormat.setOutputPath(job, new Path(Paths.IDF_OUT));
