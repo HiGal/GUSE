@@ -5,6 +5,7 @@ Farit Galeev, Evgenia Kivotova, Kamil Akhmetov, Rinat Babichev
 1. [ Task description. ](#desc)
 2. [ Theory. ](#theory)
 3. [The Search Engine description.](#sengine)
+4. [The Search Engine Usage.](#usage)
 
 <a name="desc"></a>
 ## 1. Task Description
@@ -101,6 +102,7 @@ Relevance Analyser computes the relevance function between the query and each do
 #### Content Extractor
 Content Extractor receives file with documentIDs from Relevance Analyser and cuts the top N lines from it.  The title already present in document id in our model.
 
+<a name="usage"></a>
 ### The Search Engine Usage
 The program is in ”GUSE.jar”.
 The next commands may be used to use services of current search engine:
