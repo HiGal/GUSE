@@ -191,11 +191,11 @@ Step 6.3: hdfs-site.xml configuration
    </property>
    <property>
        <name>dfs.namenode.name.dir</name>
-       <value>C:\hadoop-2.8.0\data\namenode</value>
+       <value>C:\hadoop\data\namenode</value>
    </property>
    <property>
        <name>dfs.datanode.data.dir</name>
-       <value>C:\hadoop-2.8.0\data\datanode</value>
+       <value>C:\hadoop\data\datanode</value>
    </property>
 </configuration>
 ```
