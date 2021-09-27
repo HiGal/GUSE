@@ -5,7 +5,7 @@ Farit Galeev, Evgenia Kivotova, Kamil Akhmetov, Rinat Babichev
 1. [ Task description. ](#desc)
 2. [ Theory. ](#theory)
 3. [The Search Engine description.](#sengine)
-4. [ Setting up in Windows ] (#winsetup)
+4. [ Setting up in Windows. ](#winsetup)
 5. [The Search Engine Usage.](#usage)
 
 <a name="desc"></a>
@@ -104,21 +104,26 @@ Relevance Analyser computes the relevance function between the query and each do
 Content Extractor receives file with documentIDs from Relevance Analyser and cuts the top N lines from it.  The title already present in document id in our model.
 
 <a name="winsetup"></a>
-
-#### Setting up Hadoop and Java in Windows 
+## 4. Setting up Hadoop and Java in Windows 
 (Ref.: https://www.geeksforgeeks.org/how-to-install-single-node-cluster-hadoop-on-windows/)
 
-Download and setup hadoop and Java from official websites
+#### Download and setup hadoop and Java from official websites
 
 Recommended versions,
-Hadoop : hadoop-2.8.0 or hadoop-2.8.1 https://archive.apache.org/dist/hadoop/common/
-Java : javac 1.8.0_241
 
-Step 1: Install Java
+Hadoop : hadoop-2.8.0 or hadoop-2.8.1 https://archive.apache.org/dist/hadoop/common/
+
+Java : javac 1.8.0_241 or ..
+
+Step 1: Install Java as usual
+
+Recommended to install in C:\Java\
 
 Step 2.1: Extract Hadoop at C:\hadoop\
+
 Step 2.2: Download Windows binaries for Hadoop versions from https://github.com/steveloughran/winutils
-          Extract it's contents to C:\hadoop\bin
+
+Extract it's contents to C:\hadoop\bin
 
 Step 3: Setting up the HADOOP_HOME variable
 
@@ -225,7 +230,7 @@ Step 6.6: Create datanode and namenode folders
 
 Step 7.1 Make sure you open command prompt as Administrator
 
-Start >> Command Prompt >> Right click and select run as administrator
+         Start >> Command Prompt >> Right click and select run as administrator
 
 Step 7.2: Format the namenode folder
 
@@ -234,6 +239,7 @@ Open command window (cmd) and typing command
 hdfs namenode –format
 ```
 Note: This will delete everything in hdfs, also make sure everything inside data/datanode and data/namenode deleted and are empty before the above command.
+
 
 ### Hadoop and Java installed and ready, now may proceed to run GUSE.jar
 
