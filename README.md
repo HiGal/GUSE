@@ -1,5 +1,5 @@
 # Assignment 1. Search Engine using Hadoop MapReduce
-Farit Galeev, Evgenia Kivotova, Kamil Akhmetov, Rinat Babichev, Jowin John Chemban
+Farit Galeev, Evgenia Kivotova, Kamil Akhmetov, Rinat Babichev
 
 ## Contents
 1. [ Task description. ](#desc)
